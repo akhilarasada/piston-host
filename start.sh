@@ -1,9 +1,10 @@
 #!/bin/sh
 
-echo "Starting Piston API from /piston_api ..."
-cd /piston_api && node src/api.js &
-API_PID=$!
+echo "Starting Piston via docker-entrypoint..."
+cd /piston_api && /piston_api/docker-entrypoint.sh &
+ENTRY_PID=$!
 
+# Install languages in background after API is ready
 (
   echo "Waiting for API to be ready..."
   until curl -sf http://localhost:2000/api/v2/runtimes > /dev/null 2>&1; do
@@ -35,4 +36,4 @@ API_PID=$!
   echo "All languages installed! Piston fully ready."
 ) &
 
-wait $API_PID
+wait $ENTRY_PID
