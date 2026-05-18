@@ -1,18 +1,32 @@
 #!/bin/sh
 
-echo "Starting Piston API on port 2000..."
+echo "Locating Piston API entry point..."
 
-# Start Piston API immediately so Railway health check passes
-node /piston/repo/src/api.js &
+# Find wherever piston put its api.js - the path changes between versions
+API_JS=$(find / -name "api.js" -path "*/src/api.js" 2>/dev/null | head -1)
+
+if [ -z "$API_JS" ]; then
+  echo "ERROR: Could not find Piston api.js. Listing /piston and /api for debug:"
+  ls /piston 2>/dev/null || echo "  /piston not found"
+  ls /api    2>/dev/null || echo "  /api not found"
+  exit 1
+fi
+
+echo "Found API at: $API_JS"
+API_DIR=$(dirname "$API_JS")
+WORK_DIR=$(dirname "$API_DIR")
+
+echo "Starting Piston API on port 2000..."
+cd "$WORK_DIR" && node src/api.js &
 API_PID=$!
 
-# Install languages in the background — does not block startup
+# Install languages in background after API is ready
 (
-  echo "Waiting for API to be ready before installing languages..."
+  echo "Waiting for API to be ready..."
   until curl -sf http://localhost:2000/api/v2/runtimes > /dev/null 2>&1; do
     sleep 3
   done
-  echo "API ready — installing languages in background..."
+  echo "API ready - installing languages in background..."
 
   install() {
     echo "  Installing $1 $2 ..."
@@ -38,5 +52,4 @@ API_PID=$!
   echo "All languages installed! Piston fully ready."
 ) &
 
-# Keep container alive
 wait $API_PID
