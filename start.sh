@@ -1,32 +1,23 @@
 #!/bin/sh
 
+# Railway sets PORT dynamically - Piston reads it automatically
+API_PORT=${PORT:-8080}
+echo "Starting Piston on port $API_PORT ..."
+
 cd /piston_api
-
-# Try both possible entry points
-if [ -f "src/index.js" ]; then
-  ENTRY="src/index.js"
-elif [ -f "index.js" ]; then
-  ENTRY="index.js"
-else
-  echo "ERROR: No entry point found. Contents of /piston_api:"
-  ls -la /piston_api/
-  exit 1
-fi
-
-echo "Starting Piston: node $ENTRY"
-node "$ENTRY" &
+node src/index.js &
 API_PID=$!
 
 (
-  echo "Waiting for API..."
-  until curl -sf http://localhost:2000/api/v2/runtimes > /dev/null 2>&1; do
+  echo "Waiting for API on port $API_PORT ..."
+  until curl -sf http://localhost:$API_PORT/api/v2/runtimes > /dev/null 2>&1; do
     sleep 3
   done
-  echo "API ready - installing languages..."
+  echo "API ready - installing languages in background..."
 
   install() {
     echo "  Installing $1 $2"
-    curl -sf -X POST http://localhost:2000/api/v2/packages \
+    curl -sf -X POST http://localhost:$API_PORT/api/v2/packages \
       -H 'Content-Type: application/json' \
       -d "{\"language\":\"$1\",\"version\":\"$2\"}" || true
     sleep 2
