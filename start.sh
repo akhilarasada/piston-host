@@ -1,19 +1,31 @@
 #!/bin/sh
 
-echo "Starting Piston via docker-entrypoint..."
-cd /piston_api && /piston_api/docker-entrypoint.sh &
-ENTRY_PID=$!
+cd /piston_api
 
-# Install languages in background after API is ready
+# Try both possible entry points
+if [ -f "src/index.js" ]; then
+  ENTRY="src/index.js"
+elif [ -f "index.js" ]; then
+  ENTRY="index.js"
+else
+  echo "ERROR: No entry point found. Contents of /piston_api:"
+  ls -la /piston_api/
+  exit 1
+fi
+
+echo "Starting Piston: node $ENTRY"
+node "$ENTRY" &
+API_PID=$!
+
 (
-  echo "Waiting for API to be ready..."
+  echo "Waiting for API..."
   until curl -sf http://localhost:2000/api/v2/runtimes > /dev/null 2>&1; do
     sleep 3
   done
-  echo "API ready - installing languages in background..."
+  echo "API ready - installing languages..."
 
   install() {
-    echo "  Installing $1 $2 ..."
+    echo "  Installing $1 $2"
     curl -sf -X POST http://localhost:2000/api/v2/packages \
       -H 'Content-Type: application/json' \
       -d "{\"language\":\"$1\",\"version\":\"$2\"}" || true
@@ -36,4 +48,4 @@ ENTRY_PID=$!
   echo "All languages installed! Piston fully ready."
 ) &
 
-wait $ENTRY_PID
+wait $API_PID
