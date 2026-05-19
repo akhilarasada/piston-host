@@ -1,7 +1,10 @@
 FROM ghcr.io/engineer-man/piston
 ENV PORT=2000
 
-# Copy start script then strip Windows CRLF -> LF so it runs on Linux
+# Piston requires /piston directory for packages and job storage
+RUN mkdir -p /piston
+
+# Strip Windows CRLF from start.sh
 COPY start.sh /start.sh.raw
 RUN tr -d '\r' < /start.sh.raw > /start.sh && chmod +x /start.sh
 
