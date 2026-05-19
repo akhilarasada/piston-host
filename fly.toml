@@ -1,0 +1,19 @@
+app = "piston-host"
+primary_region = "sin"          # Singapore — closest free region to Asia
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8080
+  force_https   = true
+  auto_stop_machines  = false   # keep alive so packages stay installed
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "2gb"
+
+[experimental]
+  privileged = true             # Piston needs Linux namespaces to run code
