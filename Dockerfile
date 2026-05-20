@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PORT=8080
+ENV PORT=7860
 
 # ── Base tools ────────────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y curl ca-certificates unzip gnupg && \
@@ -40,5 +40,5 @@ COPY package.json .
 RUN npm install --production
 COPY server.js .
 
-EXPOSE 8080
+EXPOSE 7860
 CMD ["node", "server.js"]
